@@ -26,7 +26,7 @@ import sys
 
 # Importing Model
 
-from LeNet import LeNet
+from VggNet import VggNet
 
 
 
@@ -46,14 +46,14 @@ class FER2013Dataset(Dataset):
         self.imgdata = []
         self.arr = None 
 
-        for i in self.df['pixels'].tolist():
+        for i in tqdm(self.df['pixels'].tolist(), desc = "Dataset creations", leave = False):
             self.arr = np.array([int(j) for j in i.split(' ')])
 
             self.arr = self.arr.reshape((48,48))
             self.arr = Image.fromarray(self.arr)
-            self.arr = self.arr.resize((32, 32), Image.BILINEAR) 
+            self.arr = self.arr.resize((224, 224), Image.BILINEAR) 
             self.arr = np.array(self.arr.getdata())
-            self.arr = self.arr.reshape((1,32,32))
+            self.arr = self.arr.reshape((1,224,224))
             self.imgdata.append(self.arr)
 
         self.imgdata = np.array(self.imgdata)
@@ -84,18 +84,16 @@ def load_checkpoint(model, optimizer, checkpoint):
 
 FerData = dataParser()
 
-
 def accuracy_check(predictions, labels):
     classes = torch.argmax(predictions, dim=1)
     # return torch.mean((classes == labels).float())
     return (classes == labels).float().mean().item()
 
-
-input_size    = 1*32*32
+input_size    = 1*224*224
 num_classes   = 7
-batch_size    = 32
+batch_size    = 8
 learning_rate = 3e-4
-num_epochs    = 10
+num_epochs    = 3
 checkpoint_file = "my_checkpoint.pth.tar"
 load_model    = True if os.path.isfile("my_checkpoint.pth.tar") else False
 
@@ -106,13 +104,19 @@ print(FerData.val.shape)
 print(FerData.test.shape)
 
 
+print("Dataset Creation")
 train_dataset = FER2013Dataset(FerData.train)  
 val_dataset   = FER2013Dataset(FerData.val)
 test_dataset  = FER2013Dataset(FerData.test)
 
+
+print("Dataset Creation succesfull")
+
+print("Dataset loading")
 train_loader  = DataLoader(train_dataset    , batch_size = batch_size,  shuffle = True)
 val_loader    = DataLoader(val_dataset      , batch_size = batch_size,  shuffle = True)
 test_loader   = DataLoader(test_dataset     , batch_size = batch_size,  shuffle = True)
+print("Dataset Loading succesfull")
 
 
 
@@ -120,7 +124,7 @@ test_loader   = DataLoader(test_dataset     , batch_size = batch_size,  shuffle 
 device = 'cuda'if torch.cuda.is_available() else 'cpu'
 
 
-model = LeNet(num_classes=7).to(device)
+model = VggNet(in_channels = 1, architecture_type = "VGG19", num_classes = 7).to(device)
 
 # Loss Function and Optimizers
 criterion  = nn.CrossEntropyLoss()
@@ -128,7 +132,8 @@ optimizer  = optim.Adam(model.parameters(), lr = learning_rate)
 
 
 
-writer = SummaryWriter(f"runs/EmotionDetection/LeNet") 
+
+writer = SummaryWriter(f"runs/EmotionDetection/VggNet") 
 
 def train():
     losses = []
@@ -195,9 +200,3 @@ if __name__ == '__main__':
     main()
     print(f"TOOK {time()-START_SESSION} SECS TO RUN ENTIRE MODULE !!!")
     # torch.save(model.state_dict(), "mnist_cnn.pt")
-
-
-
-
-
-

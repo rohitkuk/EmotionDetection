@@ -44,7 +44,7 @@ class GoogLeNet(nn.Module):
 
         self.avgpool        = nn.AvgPool2d(kernel_size = (7,7), stride = 1) #try with padding 1 also
         self.dropout        = nn.Dropout(p=0.4)
-        self.fc1            = nn.Linear(1024,1000) 
+        self.fc1            = nn.Linear(1024,num_classes) 
 
     def forward(self, x):
         x = self.conv1(x)
